@@ -1,0 +1,82 @@
+@font-face {
+  font-family: 'Raleway', sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  src: local('Raleway'),
+       url("https://fonts.googleapis.com/css?family=Raleway");
+  unicode-range: U+000-5FF;
+}
+
+html, body {
+  font-family: 'Raleway', sans-serif;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#map {
+  bottom:0px;
+  height: 100%;
+  left: 400px;
+  position: absolute;
+  right: 0px;
+}
+
+.container {
+  height: 100%;
+  position: relative;
+}
+
+.options-box {
+  background: #fff;
+  border: 1px solid #999;
+  border-radius: 3px;
+  height: 100%;
+  /*line-height: 35px;*/
+  padding: 10px 10px 30px 10px;
+  text-align: left;
+  width: 380px;
+}
+
+.ren-photo {
+  width: 25%;
+}
+
+.title {
+  color: #525454;
+  font-size: 22px;
+  max-width: 72%;
+  float: right;
+  margin-left: 3%;
+}
+
+#listenings-btn {
+  width: 48%;
+}
+
+.text {
+  font-family: 'Raleway', sans-serif;
+  font-size: 12px;
+}
+
+#pano {
+  width: inherit;
+  height: 200px;
+}
+
+.pano-title, .vr-title {
+  font-weight: bold;
+}
+
+hr {
+  background: #D0D7D9;
+  height: 1px;
+  margin: 20px 0 20px 0;
+  border: none;
+}
+
+ul {
+  padding-left: 5%;
+  /*font-size: 14px;*/
+
+}
