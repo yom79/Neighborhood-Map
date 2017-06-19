@@ -472,3 +472,67 @@ function displayDirections(i) {
     }
   });
 }
+
+
+
+this.createLargeInfowindow = function(marker) {
+  // Get data from foursquare
+  var name,
+      foursqaddress,
+      foursqLikes,
+      foursqDesc,
+      foursqLink;
+
+  var v = "20170603";
+  var foursqapi = "https://api.foursquare.com/v2/venues/" + marker.foursqid +
+  "?client_id=CSPBX14BPM20MZ31XGZZQ0CFRJ5AM2USP3AIGEYRRPTHCJ3O&client_secret=X14V4PIDNRIABQPAH5VMRJ52AWZOJ5R21GTQ3MELH2QOOEQW&v="
+  + v + "&locale=en";
+
+  $.getJSON(foursqapi, function(data) {
+    foursqaddress = data.response.venue.location.formattedAddress[1];
+    foursqLikes = data.response.venue.likes.count + " humans like this place";
+    foursqCategory = data.response.venue.categories[0].name;
+    foursqLink = data.response.venue.canonicalUrl+"?ref=CSPBX14BPM20MZ31XGZZQ0CFRJ5AM2USP3AIGEYRRPTHCJ3O";
+  })
+    .fail(function() {
+      foursqaddress = "Address not available";
+      foursqLikes = "No data on likes";
+      foursqCategory = "N/A";
+      foursqLink = "";
+    })
+    .done (function() {
+      // clear content if infowindow was already open
+      if (largeInfowindow.marker != marker) {
+        largeInfowindow.setContent("");
+        largeInfowindow.marker = marker;
+      }
+
+      sv.getPanorama({location: marker.position}, function(data,status) {
+      //get streetview image
+        if (status == "OK") {
+          // largeInfowindow.setContent('<div class="pano-title">' + marker.title + '</div><div id="pano"></div>' + '<div>' + marker.tip + '</div>');
+          largeInfowindow.setContent('<div class="pano-title">' + marker.title + ' (' + foursqCategory + ')</div><div id="pano"></div><div><span class="item-title">Located in: </span>' + foursqaddress + '</div><div>'
+          + foursqLikes + '</div><div><span class="item-title">Tip from Ren: </span>' + marker.tip + '</div><div><a target="_blank" href=' + foursqLink + '>See full details</a> on Foursquare</div>');
+
+          // Displayed largeInfowindow on clicked marker in front of all other infowindows
+          largeInfowindow.setZIndex(90);
+          var nearStreetViewLocation = data.location.latLng;
+          var heading = google.maps.geometry.spherical.computeHeading(nearStreetViewLocation, marker.position);
+          var panoramaOptions = {
+            // position: nearStreetViewLocation,
+            pano: data.location.pano,
+            pov: {
+              heading: heading,
+              pitch: 0
+            }
+          };
+          var panorama = new google.maps.StreetViewPanorama(document.getElementById("pano"), panoramaOptions);
+        } else {
+          // largeInfowindow.setContent('<div class="pano-title">' + marker.title + '</div>' + '<div>No Street View Found</div>'+ '<div>' + marker.tip + '</div>');
+          largeInfowindow.setContent('<div class="pano-title">' + marker.title + '(' + foursqCategory + ')</div><div>No Image Found</div><div><span class="item-title">Located in: </span>' + foursqaddress + '</div><div>'
+          + foursqLikes + '</div><div><span class="item-title">Tip from Ren: </span>' + marker.tip + '</div><div><a href=' + foursqLink + '>See more info</a> on Foursquare</div>');
+        }
+      });
+      largeInfowindow.open(map, marker);
+  });
+};

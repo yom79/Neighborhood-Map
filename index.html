@@ -5,55 +5,79 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>Ren's Neighborhood Map</title>
-  <link rel="stylesheet" type="text/css" href="style.css">
+  <link rel="stylesheet" type="text/css" href="css/style.css">
   <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet">
+  <link rel="stylesheet" href="css/jquery-ui.min.css">
 </head>
 <body>
   <div class="container">
     <div class="options-box">
-      <div class = "title-box">
+      <div class = "header-box">
         <img class="ren-photo" src="img/img_1405.jpg" alt="Ren, the cutest toy poodle ever">
-        <span class="title">Ren's Happy Doggy Places in and around Tokyo</span>
+        <p class="title">Ren's Happy Doggy Places in and around Tokyo</p>
+        <input class="text show-all-btn" data-bind="click: reset" type="button" value="Reset/See All Places">
+        <hr>
+        <div class="search-box">
+          <p>Find a Fun Place Near You</p>
+          <span class="text">Where are you located?</span>
+          <input id="origin" type="text" placeholder="Eg: Ebisu Garden Place" class="text">
+          <br>
+          <span class="text">Within</span>
+          <select id="maxDuration" class="text">
+            <option value="15">15 min</option>
+            <option value="30">30 min</option>
+            <option value="60">60 min</option>
+            <option value="90">90 min</option>
+            <option value="120">2 hour</option>
+          </select>
+          <select id="travelMode" class="text">
+            <!--Bicycling is omitted due to Google's data unavailability in Japan  -->
+            <option value="DRIVING">drive</option>
+            <option value="WALKING">walk</option>
+            <!-- Transit also disabled, as it does not seem to be available through the API in Japan -->
+            <!-- <option value="TRANSIT">transit ride</option> -->
+          </select>
+          <input data-bind="click: searchWithinTime" id="search-within-time" type="button" value="Find" class="text">
+        </div>
+        <hr>
+
       </div>
-      <div>
-        <input data-bind="click: toggleMarkers, attr: {value: btntxt}" type="button" value="Show All Places" class="text">
+      <div id="text-list">
+        <p>...Or Click on the List Below to View Details</p>
+        <ul data-bind="foreach: placeList" class="listings">
+          <li class="list-text" data-bind="text: placeName, click: $parent.displayCurrentPlace, attr: {id: 'entry-' + $index()}"></li>
+          <div data-bind="if: self.smallScreen, attr: {id: 'desc-' + $index()}"></div>
+        </ul>
       </div>
-      <hr>
-      <div>
-        <p>Find a Fun Place Near You</p>
-        <span class="text">Where are you located?</span>
-        <input id="origin" type="text" placeholder="Eg: Ebisu Garden Place" class="text">
-        <br>
-        <span class="text">Within</span>
-        <select id="maxDuration" class="text">
-          <option value="15">15 min</option>
-          <option value="30">30 min</option>
-          <option value="60">60 min</option>
-          <option value="90">90 min</option>
-          <option value="120">2 hour</option>
-        </select>
-        <select id="travelMode" class="text">
-          <!--Bicycling is omitted due to Google's data unavailability in Japan  -->
-          <option value="DRIVING">drive</option>
-          <option value="WALKING">walk</option>
-          <option value="TRANSIT">transit ride</option>
-        </select>
-        <input data-bind="click: searchWithinTime" id="search-within-time" type="button" value="Find" class="text">
-      </div>
-      <hr>
-      <ul data-bind="foreach: placeList" class="listings">
-        <li data-bind="text: placeName, click: $parent.displayCurrentPlace"></li>
-      </ul>
     </div>
-    <div id="map"></div>
+    <div id="map-header" data-bind="if: smallScreen">
+      <img class="backicon" src="img/png/backarrow.png">
+      <div class="search-box">
+        <p class-"text">Do you need directions?</p>
+        <span class="text">Leaving from
+          <input id="origin" type="text" placeholder="Eg: Ebisu Garden Place" class="text">
+        </span>
+        <br>
+        <p class="text">Travelling by
+          <select id="travelMode" class="text">
+            <option value="DRIVING">drive</option>
+            <option value="WALKING">walk</option>
+          </select>
+          <input data-bind="click: " type="button" value="View Route" class="text">
+        </p>
+      </div>
+    </div>
+    <div id="map">
+
+    </div>
   </div>
 
   <script src="js/lib/knockout-3.2.0.js"></script>
+  <script src="js/lib/jquery-3.2.1.min.js"></script>
+  <script src="js/lib/external/jquery/jquery.js"></script>
+  <script src="js/lib/jquery-ui.min.js"></script>
   <script src="js/app.js"></script>
   <script async defer src="https://maps.googleapis.com/maps/api/js?libraries=places,geometry&key=AIzaSyBO6Y3aZQlPmKbTGSxvVKL9y6C7jlUZkWw&v=3&callback=initMap"></script>
-
-  <!--TODO only load libraries that are used  -->
-  <!--TODO add another third party api  -->
 
 </body>
 </html>

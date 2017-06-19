@@ -1,6 +1,5 @@
-// Data of places for use in the project
-// Some entries are commented out to meet Google's limit on # destinations
 var places = [
+  // commenting out some data to meet Google's limit on # destinations
   {
     name: "Ebisu Garden Place",
     id: "4ca1863779d9b1f7e654c099",
@@ -192,43 +191,42 @@ var places = [
 var Place = function(data,index) {
   this.placeName = data.title;
   this.index = index;
-  this.position = data.position;
 };
 
-// Declare some variables so that they can be accessible to the getDirections function
-// defined outside initMap()
-var map,
-    bounds,
-    ds,
-    directionsDisplay,
-    origin;
 
-var marker1,
-    marker2,
-    // Array of all markers. This array will not change throughout.
-    markers = [];
-// Large infowindow will contain information from Google and Foursquare for the user-selected place
-var largeInfowindow;
-// This array will only contain markers that are displayed.
-var displayedMarkers = [];
-// This array will contain small infowindows which will display distance and duration of the trip from the user-specified origin
-var smallInfowindows = [];
 
 
 function initMap() {
   // Create customized map
   var styles =
     [{"featureType":"landscape.man_made","elementType":"geometry","stylers":[{"color":"#f7f1df"}]},{"featureType":"landscape.natural","elementType":"geometry","stylers":[{"color":"#d0e3b4"}]},{"featureType":"landscape.natural.terrain","elementType":"geometry","stylers":[{"visibility":"off"}]},{"featureType":"poi","elementType":"labels","stylers":[{"visibility":"off"}]},{"featureType":"poi.business","elementType":"all","stylers":[{"visibility":"off"}]},{"featureType":"poi.medical","elementType":"geometry","stylers":[{"color":"#fbd3da"}]},{"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#bde6ab"}]},{"featureType":"road","elementType":"geometry.stroke","stylers":[{"visibility":"off"}]},{"featureType":"road","elementType":"labels","stylers":[{"visibility":"off"}]},{"featureType":"road.highway","elementType":"geometry.fill","stylers":[{"color":"#ffe15f"}]},{"featureType":"road.highway","elementType":"geometry.stroke","stylers":[{"color":"#efd151"}]},{"featureType":"road.arterial","elementType":"geometry.fill","stylers":[{"color":"#ffffff"}]},{"featureType":"road.local","elementType":"geometry.fill","stylers":[{"color":"black"}]},{"featureType":"transit.station.airport","elementType":"geometry.fill","stylers":[{"color":"#cfb2db"}]},{"featureType":"water","elementType":"geometry","stylers":[{"color":"#a2daf2"}]}];
-  map = new google.maps.Map(document.getElementById('map'), {
+  var map = new google.maps.Map(document.getElementById('map'), {
     center:  {lat: 35.6471607, lng: 139.7075507},
     zoom: 13,
     styles: styles,
     mapTypeControl: false
   });
+//
+//   var conductPlacesSearch = function(data) {
+//     var placesService = new google.maps.places.PlacesService(map);
+//     data.forEach(function(place) {
+//       placesService.textSearch({
+//         query: place.name
+//       }, function(results, status) {
+//         // if (status === google.maps.places.PlacesServiceStatus.OK) {
+//           console.log(results);
+//         // }
+//       });
+//     });
+//   };
+//   conductPlacesSearch(places);
+//
 
   var ViewModel = function() {
-    var self = this;
 
+    var self = this;
+    // Array of displayed markers. Initially contains all markers.
+    var markers = [];
     places.forEach(function(place) {
       var marker = new google.maps.Marker({
         icon: "img/png/004-dog-pawprint-on-a-heart.png",
@@ -243,205 +241,166 @@ function initMap() {
       });
       marker.addListener("click", function() {
         self.createLargeInfowindow(marker);
-        // Clicked marker bounces for 3 seconds
-        marker.setAnimation(google.maps.Animation.BOUNCE);
-        window.setTimeout(function() {
-          marker.setAnimation(null);
-        }, 3000);
       });
       markers.push(marker);
     });
 
-    //Create an array of destinations, which contain all the places. This array does not change.
-    var destinations = [];
-    markers.forEach(function(marker) {
-      destinations.push(marker.position);
-    });
-
-    // Create an array of place names. Items in this array are shown in the clickable text list on the page.
+    // Create an array of the name of all the places. This syncs with text list on page.
     this.placeList = ko.observableArray([]);
+
     this.createPlaceList = function(markerArray) {
       markerArray.forEach(function(marker,index){
         self.placeList.push(new Place(marker,index));
       });
     };
 
-    // Large infowindow will contain information from Google and Foursquare for the user-selected place
-    largeInfowindow = new google.maps.InfoWindow();
 
-    // Display all/hide all markers when user clicks on the show all/hide all button
+    // Only contains markers that are displayed. Initially a copy of the markers array.
+    var displayedMarkers = [];
+    // Displays all/hide all markers when user clicks on a button
+    var markerVisibility = false;
     this.btntxt = ko.observable("Show All Places");
     this.clickableList = ko.observable(false);
     this.toggleMarkers = function() {
-      // Reset arrays, infowindows and directions
-      if (self.btntxt() == "Show All Places") {
-        if (displayedMarkers.length>0) {
-          this.clearAll();
-        }
-        // Create a displayed marker array and a placeList containing all displayed places
+      // close all infowindows
+      largeInfowindow.close();
+      if (!markerVisibility) {
+        // Clear displayedMarkers array and include new markers for all places
+        displayedMarkers.splice(0,displayedMarkers.length);
         for (let i=0; i<markers.length;i++) {
           displayedMarkers.push(markers[i]);
          };
         this.createPlaceList(displayedMarkers);
-        mapView.renderMarkers(displayedMarkers);
-        // This observable is true when the clickable text list of places is displayed
+        mapView.displayMarkers(displayedMarkers);
         this.clickableList(true);
         self.btntxt("Hide All Places");
+        markerVisibility = true;
       } else {
-        if (displayedMarkers.length>0) {
-          this.clearAll();
-        }
+        mapView.hideMarkers(displayedMarkers);
         this.clickableList(false);
+        this.placeList.splice(0,this.placeList().length);
+        displayedMarkers.splice(0,displayedMarkers.length);
         self.btntxt("Show All Places");
+        markerVisibility = false;
       }
     };
 
-    this.toggleMap = function() {
-      map.style.display = "none";
-    };
-
-    // Clear all arrays, markers and infowindows
-    this.clearAll = function() {
-      // windows need to be closed before mapView.hideMarkers
-      largeInfowindow.close();
-      smallInfowindows.forEach(function(smallinfowindow) {
-        smallinfowindow.close();
-      });
-      mapView.hideMarkers(displayedMarkers);
-
-      // clear any prior directions
-      if (directionsDisplay) {
-        directionsDisplay.setDirections({routes: []});
-      }
-
-      // clear arrays
-      displayedMarkers.splice(0,displayedMarkers.length);
-      self.placeList.splice(0,self.placeList().length);
-      smallInfowindows.splice(0,smallInfowindows.length);
-    };
-
-    // Show large infowindow for the user-seleted place
+    // Show only the current marker and infowindow when user clicks on the text list
     this.displayCurrentPlace = function(clickedPlace) {
-      mapView.renderClickedPlace(displayedMarkers[clickedPlace.index]);
+      mapView.displayClickedPlace(displayedMarkers[clickedPlace.index]);
       self.createLargeInfowindow(displayedMarkers[clickedPlace.index]);
     };
 
+    var largeInfowindow = new google.maps.InfoWindow();
     var sv = new google.maps.StreetViewService();
-    // Declaring variables required to get data from Foursquare
-    var name,
-        foursqaddress,
-        foursqLikes,
-        foursqDesc,
-        foursqLink,
-        foursqapi,
-        foursqCategory;
-    // Date used to control for foursquare version
-    var v = "20170603";
-    // Variables for setting infowindow content
-    var contentStr1 = "",
-        contentStr2 = "";
-    // Declare variables required for Google Streeview
-    var heading,
-        pano,
-        panorama,
-        panoramaOptions;
-
     this.createLargeInfowindow = function(marker) {
-      // clear content of the infowindow (if any). It is not necessary, but seems to improve transition from one infowindow to another
-      if (largeInfowindow.marker != marker) {
-        largeInfowindow.setContent("");
-      }
-      // Get data from foursquare for user selected place
-      foursqapi = "https://api.foursquare.com/v2/venues/" + marker.foursqid +
+      console.log(marker);
+      // Get info from foursquare
+      var name,
+          address,
+          foursqLikes,
+          foursqDesc,
+          foursqLink;
+
+      var v = "20170603";
+      var foursqapi = "https://api.foursquare.com/v2/venues/" + marker.foursqid +
       "?client_id=CSPBX14BPM20MZ31XGZZQ0CFRJ5AM2USP3AIGEYRRPTHCJ3O&client_secret=X14V4PIDNRIABQPAH5VMRJ52AWZOJ5R21GTQ3MELH2QOOEQW&v="
       + v + "&locale=en";
 
       $.getJSON(foursqapi, function(data) {
-        foursqaddress = data.response.venue.location.formattedAddress[1];
-        foursqLikes = data.response.venue.likes.count + " humans like this place";
+        address = data.response.venue.location.formattedAddress[1];
+        foursqLikes = data.response.venue.likes.count + " people like this place";
         foursqCategory = data.response.venue.categories[0].name;
         foursqLink = data.response.venue.canonicalUrl+"?ref=CSPBX14BPM20MZ31XGZZQ0CFRJ5AM2USP3AIGEYRRPTHCJ3O";
-
-        contentStr1 = '<div id="infowindow"><div class="pano-title">' + marker.title + ' (' + foursqCategory + ')</div><div id="pano"></div><div><span class="item-title">Located in: </span>'
-        + foursqaddress + '</div><div>'+ foursqLikes + '</div><div><span class="item-title">Tip from Ren: </span>' + marker.tip + '</div>';
-        contentStr2 = '<div><a target="_blank" href=' + foursqLink + '>See full details</a> on Foursquare</div></div>';
-
       })
         .fail(function() {
-          contentStr1 = '<div id="infowindow"><div class="pano-title">' + marker.title + '</div><div id="pano"></div><div><span class="item-title"></div><div><span class="item-title">Tip from Ren: </span>'
-          + marker.tip + '</div></div>';
-          contentStr2 = "";
+          address = "Address not available";
+          foursqLikes = "No data on likes";
+          foursqCategory = "Not avaialble";
+          foursqLink = "";
         })
-        .always(function() {
-          largeInfowindow.setContent(contentStr1 + contentStr2);
-          // Display largeInfowindow on clicked marker in front of all other infowindows by giving it the largest latitude #
-          largeInfowindow.setZIndex(90);
+        .done (function() {
+          // clear content if infowindow was already open
+          if (largeInfowindow.marker != marker) {
+            largeInfowindow.setContent("");
+            largeInfowindow.marker = marker;
+          }
 
           sv.getPanorama({location: marker.position}, function(data,status) {
+          //get streetview image
             if (status == "OK") {
-              pano = data.location.pano;
-              heading = google.maps.geometry.spherical.computeHeading(data.location.latLng, marker.position);
-              panoramaOptions = {
-                pano: pano,
+              // largeInfowindow.setContent('<div class="pano-title">' + marker.title + '</div><div id="pano"></div>' + '<div>' + marker.tip + '</div>');
+              largeInfowindow.setContent('<div class="pano-title">' + marker.title + ' (' + foursqCategory + ')</div><div id="pano"></div><div><span class="item-title">Located in: </span>' + address + '</div><div>'
+              + foursqLikes + '</div><div><span class="item-title">Tip from Ren: </span>' + marker.tip + '</div><div><a target="_blank" href=' + foursqLink + '>See full details</a> on Foursquare</div>');
+
+              // Displayed largeInfowindow on clicked marker in front of all other infowindows
+              largeInfowindow.setZIndex(90);
+              var nearStreetViewLocation = data.location.latLng;
+              var heading = google.maps.geometry.spherical.computeHeading(nearStreetViewLocation, marker.position);
+              var panoramaOptions = {
+                // position: nearStreetViewLocation,
+                pano: data.location.pano,
                 pov: {
                   heading: heading,
                   pitch: 0
                 }
               };
-              panorama = new google.maps.StreetViewPanorama(document.getElementById("pano"),panoramaOptions);
+              var panorama = new google.maps.StreetViewPanorama(document.getElementById("pano"), panoramaOptions);
             } else {
-              document.getElementById("pano").innerHTML = "Image Not Available";
+              // largeInfowindow.setContent('<div class="pano-title">' + marker.title + '</div>' + '<div>No Street View Found</div>'+ '<div>' + marker.tip + '</div>');
+              largeInfowindow.setContent('<div class="pano-title">' + marker.title + '(' + foursqCategory + ')</div><div>No Image Found</div><div><span class="item-title">Located in: </span>' + address + '</div><div>'
+              + foursqLikes + '</div><div><span class="item-title">Tip from Ren: </span>' + marker.tip + '</div><div><a href=' + foursqLink + '>See more info</a> on Foursquare</div>');
             }
           });
-          mapView.renderInfowindow(largeInfowindow,marker);
-        });
-      }; // End of createLargeInfowindow
+          largeInfowindow.open(map, marker);
+      });
+    };
 
-    // Declare varaibles required for distanceMatrixService
-    var distanceMatrixService = new google.maps.DistanceMatrixService();
-    var origins = [],
-        mode,
-        origin;
-    var results;
-
-    // Declare variables required for small infowindows which display results
-    var duration,
-        distanceText,
-        durationText,
-        infowindowZIndex,
-        maxDuration;
-    // Set to true if at least one destination is within the user-specified travel time
-    var atLeastOne;
+    var distanceMatrixService = new google.maps.DistanceMatrixService;
+    //Create an array of destinations, which are all the places in the list. This array does not change.
+    var destinations = [];
+    markers.forEach(function(marker) {
+      destinations.push(marker.position);
+    });
 
     // Search for places that are within user's desired travel time
     this.searchWithinTime = function() {
-      mode = document.getElementById("travelMode").value;
-      origin = document.getElementById("origin").value;
-      maxDuration = document.getElementById("maxDuration").value;
-      atLeastOne = false;
+      var origin = [],
+          smallInfowindows = [];
+      var mode = document.getElementById('travelMode').value,
+          address = document.getElementById('origin').value;
+      var atLeastOne = false;
 
-      // Alert user if user does not enter where he or she is leaving from
-      if (origin == "") {
-        window.alert("Please enter an address.");
+      if (address == '') {
+        window.alert('Please enter an address.');
       } else {
+        origin.push(address);
+
         if (displayedMarkers.length>0) {
-          this.clearAll();
+          largeInfowindow.close();
+          // mapView.hideMarkers(displayedMarkers);
+          displayedMarkers.splice(0,displayedMarkers.length);
+          this.placeList.splice(0,this.placeList().length);
         }
 
         distanceMatrixService.getDistanceMatrix({
-          origins: [origin],
+          origins: origin,
           destinations: destinations,
-          travelMode: mode,
+          travelMode: google.maps.TravelMode[mode],
           unitSystem: google.maps.UnitSystem.IMPERIAL,
-          // Commented out for now as transit directions do not seem to be working in Japan
-          // transitOptions: {
-          //   modes: ["BUS","RAIL","SUBWAY","TRAIN","TRAM"]
-          // }
         }, function(response, status) {
           if (status !== google.maps.DistanceMatrixStatus.OK) {
             window.alert('Error: ' + status);
           } else {
-            results = response.rows[0].elements;
+            var maxDuration = document.getElementById('maxDuration').value;
+
+            var results = response.rows[0].elements;
+
+            var duration,
+                distanceText,
+                durationText,
+                infowindowZIndex;
+
             for (var i = 0; i < results.length; i++) {
               if (results[i].status === "OK") {
                 // Convert duration value from seconds to MINUTES
@@ -455,48 +414,45 @@ function initMap() {
                   durationText = results[i].duration.text;
 
                   // Create a small infowindow that contains the distance and duration info
-                  contentStr1 = '<div id="vrtitle" class="vr-title">' + markers[i].title +
+                  var contentStr = '<div class="vr-title">' + markers[i].title +
                   '</div>' + durationText + ' away, ' + distanceText +
-                  '<div><input id="vr-btn" type="button" value="View Route" onclick="getDirections('+ i + ')"></input></div>';
+                  '<div><input id="vr-btn" type="button" value="View Route" onclick="getDirections()"></input></div>';
+                  smallInfowindow.setContent(contentStr);
 
-                  smallInfowindow.setContent(contentStr1);
                   // Set ZIndex to be latitude of each location instead of leaving it undefined
-                  smallInfowindow.marker = markers[i];
-                  // Each small infowindow is given a z index that is the marker's latitude. This ensures that large infowindow will be displayed in front
                   smallInfowindow.setZIndex(markers[i].position.lat());
-                  // Create an array of all small infowindows, which will be rendered together later
+                  smallInfowindow.marker = markers[i];
+
                   smallInfowindows.push(smallInfowindow);
                   atLeastOne = true;
                 }
               }
             };
             if (!atLeastOne) {
-              window.alert('We could not find any locations within that travel time!');
+              window.alert('We could not find any locations within that distance!');
             } else {
-              // Render markers and corresponding infowindows
-              mapView.renderMarkers(displayedMarkers);
-              mapView.renderInfowindowArray(smallInfowindows);
+              mapView.displaySmallInfowindows(smallInfowindows);
+              mapView.displayMarkers(displayedMarkers);
               self.createPlaceList(displayedMarkers);
-              self.clickableList(true);
-
             }
-          }
+          };
         });
       }
-    }; // End of searchWithinTime
-  }; //End of viewmodel
-
+      // End of searchWithinTime
+    };
+  // //end of viewmodel
+  };
 
   ko.applyBindings(new ViewModel());
 
   var mapView = {
     // Displays one marker when user clicks on the text list
-    renderClickedPlace: function(marker) {
+    displayClickedPlace: function(marker) {
       map.setCenter(marker.position);
       map.setZoom(13);
     },
-    renderMarkers: function(markerArray) {
-      bounds = new google.maps.LatLngBounds();
+    displayMarkers: function(markerArray) {
+      var bounds = new google.maps.LatLngBounds();
       markerArray.forEach(function(marker) {
         marker.setMap(map);
         marker.setAnimation(google.maps.Animation.DROP);
@@ -514,74 +470,36 @@ function initMap() {
         zoom: 13
       });
     },
-    renderInfowindow: function(infowindow, marker) {
-      infowindow.open(map,marker);
-    },
-    renderInfowindowArray: function(infowindowArray) {
+    displaySmallInfowindows: function(infowindowArray) {
       infowindowArray.forEach(function(infowindow) {
         infowindow.open(map,infowindow.marker);
       });
     }
-  }; // end of mapView
+  // end of mapView
+  };
+// end of initmap
+};
 
-}; // end of initmap
-
-
-  // Display route from origin to destination when user clicks on the "View Route" button in a small infowindow
-  // Placing this function here so that html onclick in small infowindow can find it
-  function getDirections(i) {
-    ds = new google.maps.DirectionsService();
-    origin = document.getElementById("origin").value;
-
-    smallInfowindows.forEach(function(smallinfowindow) {
-      smallinfowindow.close();
-    });
-    // displayedMarkers.forEach(function(marker) {
-    //   marker.setMap(null);
-    // });
-    // clear any prior routes
-    if (directionsDisplay) {
-      directionsDisplay.setDirections({routes: []});
+function getDirections() {
+  var ds = new google.maps.DirectionsService();
+  // mapView.hideMarkers(displayedMarkers);
+  var mode = document.getElementById('mode').value;
+  ds.route({
+    origin: origin,
+    destination: destination,
+    travelMode: google.maps.TravelMode[mode]
+  }, function(response, status) {
+    if (status === google.maps.DirectionsStatus.OK) {
+      var directionsDisplay = new google.maps.DirectionsRenderer({
+        map: map,
+        directions: response,
+        draggable: true,
+        polylineOptions: {
+          strokeColor: 'green'
+        }
+      });
+    } else {
+      window.alert('Directions request failed due to ' + status);
     }
-
-
-    ds.route({
-      origin: origin,
-      destination: markers[i].position,
-      // {lat: lat, lng: lng},
-      travelMode: document.getElementById("travelMode").value,
-      transitOptions: {
-        modes: ["BUS","RAIL","SUBWAY","TRAIN","TRAM"]
-      }
-    }, function(response, status) {
-
-      if (status === google.maps.DirectionsStatus.OK) {
-        directionsDisplay = new google.maps.DirectionsRenderer({
-          map: map,
-          directions: response,
-          draggable: false,
-          polylineOptions: {
-            strokeColor: 'green'
-          },
-          suppressMarkers: true
-        });
-
-        marker1 = new google.maps.Marker({
-          position: response.routes[0].legs[0].start_location,
-          map: map,
-          title: "Start: " + origin
-        });
-        marker2 = new google.maps.Marker({
-          position: response.routes[0].legs[0].end_location,
-          map: map,
-          title: "Finish: " + markers[i].title
-        });
-
-        displayedMarkers.push(marker1, marker2);
-
-      } else {
-        window.alert('Directions request failed due to ' + status);
-      }
-    });
-
-  }
+  });
+};
