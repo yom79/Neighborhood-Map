@@ -103,7 +103,6 @@ ul {
   transform: translate(-640px,0px);
   transition: transform 0.3s ease;
   z-index: 2;
-
 }
 
 .backicon {

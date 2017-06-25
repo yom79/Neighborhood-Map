@@ -20,7 +20,7 @@
         <div class="search-box">
           <p>Find a Fun Place Near You</p>
           <span class="text">Where are you located?</span>
-          <input id="origin" type="text" placeholder="Eg: Ebisu Garden Place" class="text">
+          <input id="origin" data-bind="textInput: origin" type="text" placeholder="Eg: Ebisu Garden Place" class="text">
           <br>
           <span class="text">Within</span>
           <select id="maxDuration" class="text">
@@ -30,7 +30,7 @@
             <option value="90">90 min</option>
             <option value="120">2 hour</option>
           </select>
-          <select id="travelMode" class="text">
+          <select id="travelMode" data-bind="value: travelMode" class="text">
             <!--Bicycling is omitted due to Google's data unavailability in Japan  -->
             <option value="DRIVING">drive</option>
             <option value="WALKING">walk</option>
@@ -42,33 +42,34 @@
         <hr>
 
       </div>
+      <!-- Some of what is below is only visible on small screens -->
       <div id="text-list">
         <p>...Or Click on the List Below to View Details</p>
         <ul data-bind="foreach: placeList" class="listings">
-          <li class="list-text" data-bind="text: placeName, click: $parent.displayCurrentPlace, attr: {id: 'entry-' + $index()}"></li>
-          <div data-bind="if: self.smallScreen, attr: {id: 'desc-' + $index()}"></div>
+            <li class="list-text" data-bind="text: placeName, click: $parent.displayCurrentPlace, attr: {id: 'entry-' + $index()}"></li>
+            <div class="text list-text" data-bind="if: self.smallScreen, attr: {id: 'trip-' + $index()}"></div>
+            <div data-bind="if: self.smallScreen, attr: {id: 'desc-' + $index()}"></div>
         </ul>
       </div>
     </div>
     <div id="map-header" data-bind="if: smallScreen">
-      <img class="backicon" src="img/png/backarrow.png">
+      <img class="backicon back-btn" src="img/png/backarrow.png">
       <div class="search-box">
         <p class-"text">Do you need directions?</p>
         <span class="text">Leaving from
-          <input id="origin" type="text" placeholder="Eg: Ebisu Garden Place" class="text">
+          <input id="mobileOrigin" data-bind="textInput: origin" type="text" placeholder="Eg: Ebisu Garden Place" class="text">
         </span>
         <br>
         <p class="text">Travelling by
-          <select id="travelMode" class="text">
+          <select id="mobileTravelMode" data-bind="value: travelMode" class="text">
             <option value="DRIVING">drive</option>
             <option value="WALKING">walk</option>
           </select>
-          <input data-bind="click: " type="button" value="View Route" class="text">
+          <input id="mobileVR-btn" type="button" value="View Route" class="text">
         </p>
       </div>
     </div>
     <div id="map">
-
     </div>
   </div>
 

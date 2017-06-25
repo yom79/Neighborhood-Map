@@ -110,7 +110,7 @@ var places = [
     tip: "This campus has a nice grassy field with lots of trees in the back of the building, which is used as a dog run. "
   },
   {
-    name: "Rinko Park",
+    name: "Rinko Koen",
     id: "4b5672d5f964a520d11028e3",
     location: [{lat: 35.46108941215697,lng: 139.63719606399536}],
     tip: "Nice city park with a sizable grassy area and a nice view of the Yokoahama port."
@@ -191,28 +191,32 @@ var places = [
 
 // Declare some variables so that they can be accessible to the getDirections function
 // defined outside initMap()
-var map,
-    bounds,
+var origin,
+    travelMode,
+    destination,
+    title,
     ds,
     directionsDisplay,
-    origin;
-
-var marker1,
-    marker2,
-    // Array of all markers. This array will not change throughout.
-    markers = [];
-
-// This array will only contain markers that are displayed.
-var displayedMarkers = [];
+    map,
+    marker1,
+    marker2;
 // This array will contain small infowindows which will display distance and duration of the trip from the user-specified origin
 var smallInfowindows = [];
+// Array of all markers. This array will not change throughout.
+var markers = [];
+// This array will only contain markers that are displayed.
+var displayedMarkers = [];
 
+// Callback function to the google api request. Almost all the code is defined within it to ensure availability of google maps data..
 function initMap() {
-
   var ViewModel = function() {
     var self = this;
     //Create an array of destinations, which contain all the places. This array does not change.
     var destinations = [];
+    // Large infowindow will contain information from Google and Foursquare for the user-selected place
+    var largeInfowindow = new google.maps.InfoWindow();
+    // bounds to used for resizing map
+    var bounds;
 
     this.init = function() {
       // Create customized map
@@ -231,6 +235,7 @@ function initMap() {
         this.position = data.position;
       };
 
+      // Create a marker for each place in data
       places.forEach(function(place) {
         var marker = new google.maps.Marker({
           icon: "img/png/004-dog-pawprint-on-a-heart.png",
@@ -244,9 +249,7 @@ function initMap() {
           foursqid: place.id
         });
         marker.addListener("click", function() {
-          // TODO this function requires index
-          self.createLargeInfowindow(marker);
-          mapView.addAnimation(marker);
+          self.createLargeInfowindow(marker,null);
         });
         markers.push(marker);
       });
@@ -269,11 +272,8 @@ function initMap() {
     };
     this.init();
 
-    // Large infowindow will contain information from Google and Foursquare for the user-selected place
-    var largeInfowindow = new google.maps.InfoWindow();
-
+    // Reset arrays, infowindows and directions when user clikcs on "reset/show all" button.
     this.reset = function() {
-      // Reset arrays, infowindows and directions
       if (displayedMarkers.length>0) {
         this.clearAll();
       }
@@ -286,7 +286,7 @@ function initMap() {
 
     // Clear all arrays, markers and infowindows
     this.clearAll = function() {
-      // windows need to be closed before mapView.hideMarkers
+      // windows need to be closed before markers are hidden/removed
       largeInfowindow.close();
       smallInfowindows.forEach(function(smallinfowindow) {
         smallinfowindow.close();
@@ -294,9 +294,7 @@ function initMap() {
       mapView.hideMarkers(displayedMarkers);
 
       // clear any prior directions
-      if (directionsDisplay) {
-        directionsDisplay.setDirections({routes: []});
-      }
+      directionsDisplay.setMap(null);
 
       // clear arrays
       displayedMarkers.splice(0,displayedMarkers.length);
@@ -306,10 +304,8 @@ function initMap() {
 
     var sv = new google.maps.StreetViewService();
     // Declaring variables required to get data from Foursquare
-    var name,
-        foursqaddress,
+    var foursqaddress,
         foursqLikes,
-        foursqDesc,
         foursqLink,
         foursqapi,
         foursqCategory;
@@ -319,37 +315,26 @@ function initMap() {
     var contentStr1 = "",
         contentStr2 = "",
         contentStr3 = "",
-        contentStr4 = "";
+        contentStr4 = "",
+        content = "";
     // Declare variables required for Google Streeview
-    var googleStaticSv,
-        heading,
-        pano,
-        panorama,
+    var panorama,
         panoramaOptions;
-
-    // True if screen size is less than 630px (when map is hidden). Switches between infowindow and sliding content.
-    this.smallScreen = ko.observable();
     // Clicked marker or marker that corresponds to the place in text list that user clicked
     var clickedMarker;
-    // Show large infowindow for the user-seleted place
+
+    // True if screen size is less than 630px (when map is initially hidden).
+    this.smallScreen = ko.observable();
+    // On large screens, show large infowindow when user clicks on the text list entry or on the marker. On small screens, info is displayed within the text list of places.
     this.displayCurrentPlace = function(clickedPlace) {
       clickedMarker = displayedMarkers[clickedPlace.index];
-      // Clicked marker bounces for 3 seconds
-      mapView.addAnimation(clickedMarker);
       // Set smallScreen observable
       self.smallScreen($(".container").width() < 630);
       self.createLargeInfowindow(clickedMarker,clickedPlace.index);
     };
 
-    // TODO modify this
-    this.placeInfo = ko.observable();
     // Create large infowindow which displays information relevant to the user-selected place
     this.createLargeInfowindow = function(marker,index) {
-      // clear content of the infowindow (if any). It is not necessary, but seems to help carry over previous content to the next selection
-      if (largeInfowindow.marker != marker) {
-        largeInfowindow.setContent("");
-      }
-
       // Get data from foursquare for user selected place
       foursqapi = "https://api.foursquare.com/v2/venues/" + marker.foursqid +
       "?client_id=CSPBX14BPM20MZ31XGZZQ0CFRJ5AM2USP3AIGEYRRPTHCJ3O&client_secret=X14V4PIDNRIABQPAH5VMRJ52AWZOJ5R21GTQ3MELH2QOOEQW&v="
@@ -364,18 +349,18 @@ function initMap() {
         // Create text content for clicked place
         contentStr1 = '<div id="infowindow"><div class="pano-title">' + marker.title + ' (' + foursqCategory + ')</div><div id="pano"></div>';
         contentStr2 = '<div><span class="item-title">Located in: </span>' + foursqaddress;
-        contentStr3 = ' <input type="button" class="text toggleMap" value="See Map" data-bind="click: self.toggleMap">';
+        contentStr3 = ' <input type="button" class="text seeMap-btn" value="See Map">';
         contentStr4 = '</div><div>'+ foursqLikes + '</div><div><span class="item-title">Tip from Ren: </span>' + marker.tip + '</div><div><a target="_blank" href=' + foursqLink + '>See full details</a> on Foursquare</div></div>';
-
       })
         .fail(function() {
-          // Create text content for clicked place for when foursq request failed
+          // Create text content for clicked place for when foursq request fails
           contentStr1 = '<div id="infowindow"><div class="pano-title">' + marker.title + '</div>';
           contentStr2 = "";
-          contentStr3 = ' <input type="button" class="text toggleMap" value="See Map">';
+          contentStr3 = ' <input type="button" class="text seeMap-btn" value="See Map">';
           contentStr4 = '<div id="pano"></div><div><span class="item-title">Tip from Ren: </span>' + marker.tip + '</div></div>';
         })
         .always(function() {
+          // On larger screens
           if (!self.smallScreen()) {
             largeInfowindow.setContent(contentStr1 + contentStr2 + contentStr4);
             // Display largeInfowindow on clicked marker in front of all other infowindows by giving it the largest latitude #
@@ -385,12 +370,10 @@ function initMap() {
             // Get StreetView Image
             sv.getPanorama({location: marker.position}, function(data,status) {
               if (status == "OK") {
-                pano = data.location.pano;
-                heading = google.maps.geometry.spherical.computeHeading(data.location.latLng, marker.position);
                 panoramaOptions = {
-                  pano: pano,
+                  pano: data.location.pano,
                   pov: {
-                    heading: heading,
+                    heading: google.maps.geometry.spherical.computeHeading(data.location.latLng, marker.position),
                     pitch: 0
                   }
                 };
@@ -398,65 +381,102 @@ function initMap() {
               } else {
                 document.getElementById("pano").innerHTML = "Image Not Available";
               }
-              mapView.animateColor(index);
-            });
-            } else {
-              // Clear previous selection's data and animated color
-              $(".place-info").remove();
-              mapView.animateColor(index);
-              // TODO do I want to add databind if?
-              $("#desc-" + index).append('<div class="place-info">' + contentStr2 + contentStr3 + contentStr4 + '</div>');
-              $(".toggleMap").click(mapView.toggleMap);
-              // Set listener on back icon on the map page
-              $(".backicon").click(mapView.toggleMap);
-            }
-            mapView.displayClickedPlace(clickedMarker,self.smallScreen());
+            }); // end of getPanorama
 
-            // Make sure the marker property is cleared if the infowindow is closed.
+            // Clicked marker bounces for 3 seconds
+            mapView.addAnimation(marker);
+            // Make sure the marker property is cleared if the infowindow is closed. Highlight on the text entry is also removed.
             largeInfowindow.addListener('closeclick', function() {
               largeInfowindow.marker = null;
               mapView.animateColor(null);
             });
 
-          }); // End of always
+          // On smaller screens
+          } else {
+            // Content to be displayed underneath the selected text entry
+            content = '<div class="place-info">' + contentStr2 + contentStr3 + contentStr4 + '</div>';
+            mapView.displayPlaceInfo(marker,index,content);
 
+            $(".seeMap-btn").click(function() {
+              // Clear any previous small InfoWindows, markers and event listeners
+              smallInfowindows.forEach(function(smallinfowindow) {
+                smallinfowindow.close();
+              });
+              smallInfowindows.splice(0,smallInfowindows.length);
+              marker1.setMap(null);
+              marker2.setMap(null);
+              directionsDisplay.setMap(null);
+              $(".back-btn").off("click");
+              $("#mobileVR-btn").off("click");
+
+              // Display map and make the marker for the clicked place bounce
+              mapView.toggleMap();
+              mapView.addAnimation(marker);
+              // Open a new smallInfowindow
+              var smallInfowindow = new google.maps.InfoWindow();
+              smallInfowindow.setContent(marker.title);
+              mapView.renderInfowindow(smallInfowindow,marker);
+              smallInfowindows.push(smallInfowindow);
+
+              // Closes the map when user clikcs on the "back" icon. Event listener is set here as I could not get knockout binding to work
+              // with a function defined in mapView (outside the view model)
+              $(".back-btn").click(function() {
+                mapView.toggleMap();
+              });
+              // Event listener on the button to display route from origin to destination
+              $("#mobileVR-btn").click(function() {
+                getDirections(index,marker,self.smallScreen());
+              });
+            });
+          }
+          mapView.displayClickedPlace(index,marker);
+        }); // End of always
       }; // End of createLargeInfowindow
 
     // Declare varaibles required for distanceMatrixService
     var distanceMatrixService = new google.maps.DistanceMatrixService();
     var origins = [],
         mode,
-        origin;
-    var results;
-
+        results;
     // Declare variables required for small infowindows which display results
     var duration,
         distanceText,
         durationText,
-        infowindowZIndex,
         maxDuration;
+    // Array of trip information for use on small screens
+    var travelArray = [];
     // Set to true if at least one destination is within the user-specified travel time
     var atLeastOne;
 
+    // Make user-provided origin and travel mode observables to pass between pages on small screens
+    this.origin = ko.observable("");
+    // Change in user selected travel mode is passed between pages on small screens, but search is not conducted automatically
+    this.travelMode = ko.observable("DRIVING");
+
+    var Trip = function(distanceText,durationText) {
+      this.distance = distanceText;
+      this.duration = durationText;
+    };
+
     // Search for places that are within user's desired travel time
     this.searchWithinTime = function() {
-      mode = document.getElementById("travelMode").value;
-      origin = document.getElementById("origin").value;
       maxDuration = document.getElementById("maxDuration").value;
       atLeastOne = false;
+      travelArray.splice(0,travelArray.length);
 
       // Alert user if user does not enter where he or she is leaving from
-      if (origin == "") {
+      if (this.origin() == "") {
         window.alert("Please enter an address.");
       } else {
+        // Clear all previous markers, infowindows, etc
         if (displayedMarkers.length>0) {
           this.clearAll();
         }
-
+        // Find destinations that are within maxDuration of travel time from user provided origin
         distanceMatrixService.getDistanceMatrix({
-          origins: [origin],
+          origins: [this.origin()],
           destinations: destinations,
-          travelMode: mode,
+          travelMode: this.travelMode(),
           unitSystem: google.maps.UnitSystem.IMPERIAL,
           // Commented out for now as transit directions do not seem to be working in Japan
           // transitOptions: {
@@ -467,30 +487,35 @@ function initMap() {
             window.alert('Error: ' + status);
           } else {
             results = response.rows[0].elements;
+
             for (var i = 0; i < results.length; i++) {
               if (results[i].status === "OK") {
                 // Convert duration value from seconds to MINUTES
                 duration = results[i].duration.value / 60;
                 if (duration <= maxDuration) {
                   displayedMarkers.push(markers[i]);
-
-                  // Create a small infowindow for all markers within specified time
-                  var smallInfowindow = new google.maps.InfoWindow();
                   distanceText = results[i].distance.text,
                   durationText = results[i].duration.text;
+                  self.smallScreen($(".container").width() < 630);
 
-                  // Create a small infowindow that contains the distance and duration info
-                  contentStr1 = '<div id="vrtitle" class="vr-title">' + markers[i].title +
-                  '</div>' + durationText + ' away, ' + distanceText +
-                  '<div><input id="vr-btn" type="button" value="View Route" onclick="getDirections('+ i + ')"></input></div>';
+                  if (!self.smallScreen()) {
+                    // Create a small infowindow for all markers within specified time
+                    var smallInfowindow = new google.maps.InfoWindow();
+                    // Create a small infowindow that contains the distance and duration info
+                    contentStr1 = '<div id="vrtitle" class="vr-title">' + markers[i].title +
+                    '</div>' + durationText + ' away, ' + distanceText +
+                    '<div><input id="vr-btn" type="button" value="View Route" onclick="getDirections('+ i + ')"></input></div>';
 
-                  smallInfowindow.setContent(contentStr1);
-                  // Set ZIndex to be latitude of each location instead of leaving it undefined
-                  smallInfowindow.marker = markers[i];
-                  // Each small infowindow is given a z index that is the marker's latitude. This ensures that large infowindow will be displayed in front
-                  smallInfowindow.setZIndex(markers[i].position.lat());
-                  // Create an array of all small infowindows, which will be rendered together later
-                  smallInfowindows.push(smallInfowindow);
+                    smallInfowindow.setContent(contentStr1);
+                    smallInfowindow.marker = markers[i];
+                    // Each small infowindow is given a z index that is the marker's latitude rather than leaving it undefined. This ensures that large infowindow will be displayed in front
+                    smallInfowindow.setZIndex(markers[i].position.lat());
+                    // Create an array of all small infowindows, which will be rendered together later
+                    smallInfowindows.push(smallInfowindow);
+                  } else {
+                    // On small screens, create an array of trip information for all qualified places
+                    travelArray.push(new Trip(distanceText,durationText));
+                  }
                   atLeastOne = true;
                 }
               }
@@ -498,18 +523,25 @@ function initMap() {
             if (!atLeastOne) {
               window.alert('We could not find any locations within that travel time!');
             } else {
-              // Render markers and corresponding infowindows
+              // Render markers and create text list of places to display
               mapView.renderMarkers(displayedMarkers);
-              mapView.renderInfowindowArray(smallInfowindows);
               self.createPlaceList(displayedMarkers);
+              if (!self.smallScreen()) {
+                // On large screens, results are displayed in small infowindows
+                mapView.renderInfowindowArray(smallInfowindows);
+              } else {
+                // On small screens, results are displayed in the text list
+                travelArray.forEach(function(data,index) {
+                  contentStr1 = data.distance + ', ' + data.duration;
+                  mapView.displayTripInfo(index,contentStr1);
+                });
+              }
             }
           }
         });
       }
     }; // End of searchWithinTime
-
   }; //End of viewmodel
-
 
   ko.applyBindings(new ViewModel());
 
@@ -518,15 +550,12 @@ function initMap() {
       this.renderMarkers(displayedMarkers);
     },
     // Display one marker when user clicks on the text list
-    displayClickedPlace: function(marker,smallScreen) {
-      if (smallScreen) {
-        $(".place-info").show("slide", {direction: "up"});
-      } else {
-        console.log(marker);
-        // TODO reconfigure for when user clicks on the marker, not the list
-        map.setCenter(marker.position);
-        map.setZoom(13);
-      }
+    displayClickedPlace: function(index,marker) {
+      // Highlight selected place in text list. This only happens when user
+      // clicks on the list rather than the market itself
+      mapView.animateColor(index);
+      map.setCenter(marker.position);
+      map.setZoom(13);
     },
     // Display an array of markers and adjust the map to accommodate them
     renderMarkers: function(markerArray) {
@@ -566,89 +595,119 @@ function initMap() {
         marker.setAnimation(null);
       }, 3000);
     },
-    // TODO what happens when infowindow is clikced closed or view route button is clicked?
     animateColor: function(index) {
+      // Reset previous color animation
       $(".list-text").animate({
         backgroundColor: "#FFFFFF"
       });
+      // If index is not null, add color
       if (index>=0) {
         $("#entry-" + index).animate({
           backgroundColor: "#F0E68C"
         });
         $("#desc-" + index).animate({
           backgroundColor: "#F0E68C"
-          // backgroundColor: "#bde6ab"
+        });
+        $("#trip-" + index).animate({
+          backgroundColor: "#F0E68C"
         });
       }
     },
+    // Show/hide map on small screens
     toggleMap: function() {
       $("#map").toggleClass("open");
       $("#map-header").toggleClass("open");
       $(".backicon").toggleClass("open");
-
-
+    },
+    // On a small screen, display largeinfowindow contents instead in the text list
+    displayPlaceInfo: function(marker,index,content) {
+      // Clear previous selection's data and animated color
+      $(".place-info").remove();
+      // Show info on the selected place in the text list
+      $("#desc-" + index).append(content);
+      $(".place-info").show("slide", {direction: "up"});
+    },
+    // Trip distance and duration in the text list info on small screens
+    displayTripInfo: function(index,content) {
+      $("#trip-" + index).append(content);
     }
   }; // end of mapView
-  // Rendering the initial set of markers
+
+  // Render the initial set of markers
   mapView.init();
+
+  // create new instances of google maps objects using variables declared at the beg
+  // (to enable access by function getDirections and availability of google api)
+  ds = new google.maps.DirectionsService();
+  marker1 = new google.maps.Marker();
+  marker2 = new google.maps.Marker();
+  directionsDisplay = new google.maps.DirectionsRenderer();
 
 }; // end of initmap
 
-
-  // Display route from origin to destination when user clicks on the "View Route" button in a small infowindow
-  // Placing this function here so that html onclick in small infowindow can find it
-  function getDirections(i) {
-    ds = new google.maps.DirectionsService();
+// Display route from origin to destination when user clicks on the "View Route" button in a small infowindow
+// Placing this function here so that html onclick in small infowindow can find it
+function getDirections(i,marker,smallScreen) {
+  // On large screens
+  if (!smallScreen) {
     origin = document.getElementById("origin").value;
+    travelMode = document.getElementById("travelMode").value;
 
     smallInfowindows.forEach(function(smallinfowindow) {
       smallinfowindow.close();
     });
-    // clear any prior routes
-    if (directionsDisplay) {
-      directionsDisplay.setDirections({routes: []});
+    destination = markers[i].position;
+    title = markers[i].title;
+
+    displayRoute(origin,destination,travelMode,title);
+  } else {
+    // On small screens
+    origin = document.getElementById("mobileOrigin").value;
+    if (origin == "") {
+      window.alert("Please enter an address.");
+    } else {
+      travelMode = document.getElementById("mobileTravelMode").value;
+      destination =  marker.position;
+      title = marker.title;
+      displayRoute(origin,destination,travelMode,title);
     }
-
-    ds.route({
-      origin: origin,
-      destination: markers[i].position,
-      // {lat: lat, lng: lng},
-      travelMode: document.getElementById("travelMode").value,
-      // transitOptions: {
-      //   modes: ["BUS","RAIL","SUBWAY","TRAIN","TRAM"]
-      // }
-    }, function(response, status) {
-
-      if (status === google.maps.DirectionsStatus.OK) {
-        directionsDisplay = new google.maps.DirectionsRenderer({
-          map: map,
-          directions: response,
-          draggable: false,
-          polylineOptions: {
-            strokeColor: 'green'
-          },
-          suppressMarkers: true
-        });
-
-        marker1 = new google.maps.Marker({
-          position: response.routes[0].legs[0].start_location,
-          map: map,
-          label: "A",
-          title: "Start: " + origin
-        });
-        marker2 = new google.maps.Marker({
-          position: response.routes[0].legs[0].end_location,
-          map: map,
-          label: "B",
-          title: "Finish: " + markers[i].title
-        });
-
-        displayedMarkers.push(marker1, marker2);
-
-      } else {
-        window.alert('Directions request failed due to ' + status);
-      }
-    });
-
-
   }
+};
+
+function displayRoute(origin,destination,travelMode,title) {
+  ds.route({
+    origin: origin,
+    destination: destination,
+    travelMode: travelMode
+  }, function(response, status) {
+    if (status === google.maps.DirectionsStatus.OK) {
+      directionsDisplay.setOptions({
+        map: map,
+        directions: response,
+        draggable: false,
+        polylineOptions: {
+          strokeColor: 'green'
+        },
+        suppressMarkers: true
+      });
+
+      marker1.setOptions({
+        map: map,
+        label: "A",
+        position: response.routes[0].legs[0].start_location,
+        title: "Start: " + origin
+      });
+      marker2.setOptions({
+        map: map,
+        label: "B",
+        position: response.routes[0].legs[0].end_location,
+        title: "Finish: " + title
+      });
+      displayedMarkers.push(marker1, marker2);
+
+    } else {
+      window.alert('Directions request failed due to ' + status);
+    }
+  });
+
+};
