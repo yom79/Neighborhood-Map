@@ -337,8 +337,8 @@ function initMap() {
     this.createLargeInfowindow = function(marker,index) {
       // Get data from foursquare for user selected place
       foursqapi = "https://api.foursquare.com/v2/venues/" + marker.foursqid +
-      "?client_id=CSPBX14BPM20MZ31XGZZQ0CFRJ5AM2USP3AIGEYRRPTHCJ3O&client_secret=X14V4PIDNRIABQPAH5VMRJ52AWZOJ5R21GTQ3MELH2QOOEQW&v="
-      + v + "&locale=en";
+      "?client_id=CSPBX14BPM20MZ31XGZZQ0CFRJ5AM2USP3AIGEYRRPTHCJ3O&client_secret=X14V4PIDNRIABQPAH5VMRJ52AWZOJ5R21GTQ3MELH2QOOEQW&v=" +
+      v + "&locale=en";
 
       $.getJSON(foursqapi, function(data) {
         foursqaddress = data.response.venue.location.formattedAddress[1];
@@ -465,7 +465,7 @@ function initMap() {
       travelArray.splice(0,travelArray.length);
 
       // Alert user if user does not enter where he or she is leaving from
-      if (this.origin() == "") {
+      if (this.origin() === "") {
         window.alert("Please enter an address.");
       } else {
         // Clear all previous markers, infowindows, etc
@@ -519,7 +519,7 @@ function initMap() {
                   atLeastOne = true;
                 }
               }
-            };
+            }
             if (!atLeastOne) {
               window.alert('We could not find any locations within that travel time!');
             } else {
@@ -643,7 +643,7 @@ function initMap() {
   marker2 = new google.maps.Marker();
   directionsDisplay = new google.maps.DirectionsRenderer();
 
-}; // end of initmap
+} // end of initmap
 
 // Display route from origin to destination when user clicks on the "View Route" button in a small infowindow
 // Placing this function here so that html onclick in small infowindow can find it
@@ -663,7 +663,7 @@ function getDirections(i,marker,smallScreen) {
   } else {
     // On small screens
     origin = document.getElementById("mobileOrigin").value;
-    if (origin == "") {
+    if (origin === "") {
       window.alert("Please enter an address.");
     } else {
       travelMode = document.getElementById("mobileTravelMode").value;
@@ -672,7 +672,7 @@ function getDirections(i,marker,smallScreen) {
       displayRoute(origin,destination,travelMode,title);
     }
   }
-};
+}
 
 function displayRoute(origin,destination,travelMode,title) {
   ds.route({
@@ -710,4 +710,4 @@ function displayRoute(origin,destination,travelMode,title) {
     }
   });
 
-};
+}
