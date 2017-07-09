@@ -5,7 +5,16 @@
 This project introduces favorite neighborhood hangouts in Tokyo and some distant places that my dog Ren recommends to other dogs/dog owners.
 
 ### Getting Started
-Double click on Index.html to view contents. When you are done, simply close the browser.
+*Data.json needs to be hosted on a local webserver to be loaded using $.getJSON.* Access the app via the local server. When you are done, simply close the browser.
+
+### Changes from Last Submission
+* Markers are now created once, and displayed/hidden as needed. Markers now bounces 3 times, rather than 3 seconds
+* Added some semantic tags in index.html
+* Added resize event listener which updates the observable on screen size automatically
+* Attribution of Foursquare for location and likes information
+* Eliminated use of jQuery/javascript to update the DOM in most places
+* Eliminated unnecessary id names
+* Added/updated error handling
 
 ### More on What You Can Do
 This project provides for slightly different experiences on larger screens and on smaller (<630px) screens.

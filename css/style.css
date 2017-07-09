@@ -1,14 +1,15 @@
 @font-face {
-  font-family: 'Raleway', sans-serif;
+  font-family: "Raleway", sans-serif;
   font-style: normal;
   font-weight: 400;
-  src: local('Raleway'),
+  src: local(),
        url("https://fonts.googleapis.com/css?family=Raleway");
-  unicode-range: U+000-5FF;
+  unicode-range: U+000-5ff;
 }
 
-html, body {
-  font-family: 'Raleway', sans-serif;
+html,
+body {
+  font-family: "Raleway", sans-serif;
   height: 100%;
   margin: 0;
   padding: 0;
@@ -40,29 +41,30 @@ html, body {
   padding-left: 3%;
 }
 
-#text-list {
-  background: #fff;
+.text-list {
   margin-left: 10px;
   text-align: left;
-  width: 94vw;
+  width: 94%;
 }
 
 .place-info {
   font-size: 0.8em;
   width: 100%;
-  display: none;
 }
 
-.pano-title, .vr-title, .item-title {
+.pano-title,
+.vr-title,
+.item-title {
   font-weight: bold;
 }
 
 hr {
-  background: #D0D7D9;
+  background: #d0d7d9;
   height: 1px;
   border: none;
 }
 
+h1,
 p {
   margin-bottom: 1%;
   margin-top: 1%;
@@ -73,8 +75,18 @@ ul {
 }
 
 .text {
-  font-family: 'Raleway', sans-serif;
+  font-family: "Raleway", sans-serif;
   font-size: 0.8em;
+}
+
+.largerText {
+  font-size: 1.2em;
+  font-weight: bold;
+}
+
+.clicked {
+  background-color: #f0e68c;
+  transition: background-color 1s ease;
 }
 
 .options-box {
@@ -83,7 +95,7 @@ ul {
   z-index: 0;
 }
 
-.title {
+h1 {
   color: #525454;
   font-size: 1.2em;
   width: 68%;
@@ -91,15 +103,15 @@ ul {
   overflow: hidden;
 }
 
-#map-header {
+.map-header {
   width: 100vw;
   max-width: 640px;
   height: 10%;
   padding-top: 1%;
   padding-bottom: 1%;
   position: absolute;
-  top: 0%;
-  background-color: #F0E68C;
+  top: 0;
+  background-color: #f0e68c;
   transform: translate(-640px,0px);
   transition: transform 0.3s ease;
   z-index: 2;
@@ -120,8 +132,17 @@ ul {
   transition: transform 0.3s ease;
 }
 
-#map.open, #map-header.open, .backicon.open {
+#map.open,
+.map-header.open,
+.backicon.open {
   transform: translate(0,0);
+}
+
+.errorMsg {
+  display: block;
+  padding-left: auto;
+  padding-right: auto;
+  text-align: center;
 }
 
 @media screen and (min-width: 630px) {
@@ -135,7 +156,7 @@ ul {
     padding-left: 3%;
   }
 
-  #infowindow {
+  .infowindow {
     width: 300px;
   }
 
@@ -144,12 +165,13 @@ ul {
     height: 200px;
   }
 
+  main,
   #map {
     transform: translate(0,0);
     display: inline-block;
     vertical-align: top;
     height: 100vh;
-    width: 60%;
+    width: 60vw;
   }
 }
 
@@ -168,11 +190,12 @@ ul {
     padding-left: 1%;
   }
 
+  main,
   #map {
     width: calc(100vw - 410px);
   }
 
-  #infowindow {
+  .infowindow {
     width: 400px;
   }
 

@@ -5,25 +5,25 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>Ren's Neighborhood Map</title>
-  <link rel="stylesheet" type="text/css" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css">
   <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet">
   <link rel="stylesheet" href="css/jquery-ui.min.css">
 </head>
 <body>
   <div class="container">
-    <div class="options-box">
-      <div class = "header-box">
+    <aside class="options-box">
+      <section class = "header-box">
         <img class="ren-photo" src="img/img_1405.jpg" alt="Ren, the cutest toy poodle ever">
-        <p class="title">Ren's Happy Doggy Places in and around Tokyo</p>
+        <h1 class="title">Ren's Happy Doggy Places in and around Tokyo</h1>
         <input class="text show-all-btn" data-bind="click: reset" type="button" value="Reset/See All Places">
         <hr>
-        <div class="search-box">
+        <section class="search-box">
           <p>Find a Fun Place Near You</p>
           <span class="text">Where are you located?</span>
           <input id="origin" data-bind="textInput: origin" type="text" placeholder="Eg: Ebisu Garden Place" class="text">
           <br>
           <span class="text">Within</span>
-          <select id="maxDuration" class="text">
+          <select data-bind="value: maxDuration" class="text">
             <option value="15">15 min</option>
             <option value="30">30 min</option>
             <option value="60">60 min</option>
@@ -37,48 +37,56 @@
             <!-- Transit also disabled, as it does not seem to be available through the API in Japan -->
             <!-- <option value="TRANSIT">transit ride</option> -->
           </select>
-          <input data-bind="click: searchWithinTime" id="search-within-time" type="button" value="Find" class="text">
-        </div>
+          <input data-bind="click: searchWithinTime" type="button" value="Find" class="text">
+        </section>
         <hr>
-
-      </div>
+      </section>
       <!-- Some of what is below is only visible on small screens -->
-      <div id="text-list">
-        <p>...Or Click on the List Below to View Details</p>
+      <section class="text-list">
+        <p>...Or Click on the List Below to View Details*</p>
+        <p class="text"> (*Place information provided by Foursquare)</p>
         <ul data-bind="foreach: placeList" class="listings">
-            <li class="list-text" data-bind="text: placeName, click: $parent.displayCurrentPlace, attr: {id: 'entry-' + $index()}"></li>
-            <div class="text list-text" data-bind="if: self.smallScreen, attr: {id: 'trip-' + $index()}"></div>
-            <div data-bind="if: self.smallScreen, attr: {id: 'desc-' + $index()}"></div>
+            <!-- Name of place -->
+            <li data-bind="text: placeName, click: $parent.displayCurrentPlace, css: {clicked: $index() === $parent.clickedIndex()}"></li>
+            <div data-bind="if: $parent.smallScreen, css: {clicked: $index() === $parent.clickedIndex()}">
+              <!-- Information related to each place and travel info -->
+              <span class="text" data-bind="text: travelInfo, css: {clicked: $index() === $parent.clickedIndex()}"></span>
+              <div class="place-info" data-bind="if: $index() === $parent.clickedIndex()">
+                <span data-bind="html: $parent.location"></span>
+                <input type="button" data-bind="click: $parent.showMap" class="text" value="See Map">
+                <div data-bind="html: $parent.details"></div>
+              </div>
+            </div>
         </ul>
-      </div>
-    </div>
-    <div id="map-header" data-bind="if: smallScreen">
-      <img class="backicon back-btn" src="img/png/backarrow.png">
-      <div class="search-box">
+
+      </section>
+    </aside>
+    <nav class="map-header" data-bind="if: smallScreen, css: {open: mapVisible}">
+      <img class="backicon back-btn" data-bind="click: function() {$root.mapVisible(false)}, css: {open: mapVisible}" src="img/png/backarrow.png">
+      <section class="search-box">
         <p class-"text">Do you need directions?</p>
         <span class="text">Leaving from
-          <input id="mobileOrigin" data-bind="textInput: origin" type="text" placeholder="Eg: Ebisu Garden Place" class="text">
+          <input data-bind="textInput: origin" type="text" placeholder="Eg: Ebisu Garden Place" class="text">
         </span>
         <br>
         <p class="text">Travelling by
-          <select id="mobileTravelMode" data-bind="value: travelMode" class="text">
+          <select data-bind="value: travelMode" class="text">
             <option value="DRIVING">drive</option>
             <option value="WALKING">walk</option>
           </select>
-          <input id="mobileVR-btn" type="button" value="View Route" class="text">
+          <input data-bind="click: function() {getDirections(null,$root.smallScreen,$root.clickedMarker)}" type="button" value="View Route" class="text">
         </p>
-      </div>
-    </div>
-    <div id="map">
-    </div>
+      </section>
+    </nav>
+    <div id="map" data-bind="css: {open: mapVisible}"></div>
   </div>
 
   <script src="js/lib/knockout-3.2.0.js"></script>
   <script src="js/lib/jquery-3.2.1.min.js"></script>
   <script src="js/lib/external/jquery/jquery.js"></script>
-  <script src="js/lib/jquery-ui.min.js"></script>
+  <script src="data.json"></script>
   <script src="js/app.js"></script>
-  <script async defer src="https://maps.googleapis.com/maps/api/js?libraries=places,geometry&key=AIzaSyBO6Y3aZQlPmKbTGSxvVKL9y6C7jlUZkWw&v=3&callback=initMap"></script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?libraries=places,geometry&key=AIzaSyBO6Y3aZQlPmKbTGSxvVKL9y6C7jlUZkWw&v=3&callback=initMap" onerror="mapError()"></script>
 
 </body>
 </html>
