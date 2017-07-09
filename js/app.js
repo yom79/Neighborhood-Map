@@ -485,6 +485,6 @@ function initMap() {
 
 // Error handling for when app fails to connect to Google. If Google maps api is available, error cases seem to be handled automatically.
 function mapError() {
-    $("#map").append("<div class='errorMsg'><img src='img_1004.jpg'><p class='largerText'>Oops! Sorry, Ren ate the map!</p><p> Please try again later.</p></div>");
+    $("#map").append("<div class='errorMsg'><img src='img/IMG_1004.JPG'><p class='largerText'>Oops! Sorry, Ren ate the map!</p><p> Please try again later.</p></div>");
 
 }

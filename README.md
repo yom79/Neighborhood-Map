@@ -5,7 +5,7 @@
 This project introduces favorite neighborhood hangouts in Tokyo and some distant places that my dog Ren recommends to other dogs/dog owners.
 
 ### Getting Started
-*Data.json needs to be hosted on a local webserver to be loaded using $.getJSON.* Access the app via the local server. When you are done, simply close the browser.
+Access the app on Github (https://yom79.github.io/Neighborhood-Map/).
 
 ### Changes from Last Submission
 * Markers are now created once, and displayed/hidden as needed. Markers now bounces 3 times, rather than 3 seconds
