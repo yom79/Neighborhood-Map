@@ -442,7 +442,7 @@ function initMap() {
     }
 
     origin = document.getElementById("origin").value;
-    travelMode = document.getElementById("travelMode").value
+    travelMode = document.getElementById("travelMode").value;
 
     ds.route({
       origin: origin,
