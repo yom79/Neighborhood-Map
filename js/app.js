@@ -15,6 +15,8 @@ var smallInfowindows = [];
 var markers = [];
 // This array will only contain markers that are displayed.
 var displayedMarkers = [];
+// This variable will refer to the view model, to make observables in the view model accessible to getDirections
+var vm;
 
 // Callback function to the google api request. Almost all the code is defined within it to ensure availability of google maps data..
 function initMap() {
@@ -34,74 +36,79 @@ function initMap() {
 
       this.init = function() {
         // Create customized map
-        var styles =
-          [{"featureType":"landscape.man_made","elementType":"geometry","stylers":[{"color":"#f7f1df"}]},{"featureType":"landscape.natural","elementType":"geometry","stylers":[{"color":"#d0e3b4"}]},{"featureType":"landscape.natural.terrain","elementType":"geometry","stylers":[{"visibility":"off"}]},{"featureType":"poi","elementType":"labels","stylers":[{"visibility":"off"}]},{"featureType":"poi.business","elementType":"all","stylers":[{"visibility":"off"}]},{"featureType":"poi.medical","elementType":"geometry","stylers":[{"color":"#fbd3da"}]},{"featureType":"poi.park","elementType":"geometry","stylers":[{"color":"#bde6ab"}]},{"featureType":"road","elementType":"geometry.stroke","stylers":[{"visibility":"off"}]},{"featureType":"road","elementType":"labels","stylers":[{"visibility":"off"}]},{"featureType":"road.highway","elementType":"geometry.fill","stylers":[{"color":"#ffe15f"}]},{"featureType":"road.highway","elementType":"geometry.stroke","stylers":[{"color":"#efd151"}]},{"featureType":"road.arterial","elementType":"geometry.fill","stylers":[{"color":"#ffffff"}]},{"featureType":"road.local","elementType":"geometry.fill","stylers":[{"color":"black"}]},{"featureType":"transit.station.airport","elementType":"geometry.fill","stylers":[{"color":"#cfb2db"}]},{"featureType":"water","elementType":"geometry","stylers":[{"color":"#a2daf2"}]}];
-        map = new google.maps.Map(document.getElementById("map"), {
-          center:  {lat: 35.6471607, lng: 139.7075507},
-          zoom: 13,
-          styles: styles,
-          mapTypeControl: false
-        });
-
-        // load data in data.json
-        $.getJSON("data.json",function(data) {
-          // Create a marker for each place in data
-          data.forEach(function(place) {
-            var marker = new google.maps.Marker({
-              icon: "img/png/004-dog-pawprint-on-a-heart.png",
-              shape: {
-                coords: [0,0, 32, 32],
-                type: "rect"
-              },
-              position: place.location[0],
-              title: place.name,
-              tip: place.tip,
-              foursqid: place.id,
-              map: map,
-              visible: false
-            });
-            marker.addListener("click", function() {
-              self.createLargeInfowindow(marker);
-            });
-            markers.push(marker);
+        $.getJSON("mapStyle.json",function(data) {
+          map = new google.maps.Map(document.getElementById("map"), {
+            center:  {lat: 35.6471607, lng: 139.7075507},
+            zoom: 13,
+            styles: data,
+            mapTypeControl: false
           });
-
-          // Create an array of destinations and displayedMarkers. These arrays contain to all markers/places.
-          // Destinations array does not change. displayedMarkers array gets updated to contain only the displayed markers.
-          markers.forEach(function(marker) {
-            destinations.push(marker.position);
-            displayedMarkers.push(marker);
-          });
-
-          // Render the initial set of markers
-          mapView.renderMarkers(displayedMarkers);
-
-          var Place = function(data,index) {
-            this.placeName = data.title;
-            this.index = index;
-            this.position = data.position;
-            // Information about the distance and duration of the trip from user-provided origin to each of the destinations. Used on small screens.
-            this.travelInfo = data.travelInfo;
-          };
-
-          // Create an array of place names. Items in this array are shown in the clickable text list on the page.
-          self.createPlaceList = function(markerArray) {
-            markerArray.forEach(function(marker,index){
-              self.placeList.push(new Place(marker,index));
-            });
-          };
-          self.createPlaceList(displayedMarkers);
         })
           // Alert user when data fail to load
           .fail(function() {
-            window.alert("Something went wrong with loading data. Please check back later.");
-          });
+            window.alert("Something went wrong while customizing map. Please check back later.");
+          })
+          .done(function() {
+            // load data in data.json
+            $.getJSON("data.json",function(data) {
+              // Create a marker for each place in data
+              data.forEach(function(place) {
+                var marker = new google.maps.Marker({
+                  icon: "img/png/004-dog-pawprint-on-a-heart.png",
+                  shape: {
+                    coords: [0,0, 32, 32],
+                    type: "rect"
+                  },
+                  position: place.location[0],
+                  title: place.name,
+                  tip: place.tip,
+                  foursqid: place.id,
+                  map: map,
+                  visible: false
+                });
+                marker.addListener("click", function() {
+                  self.createLargeInfowindow(marker);
+                });
+                markers.push(marker);
+              });
 
-        // Add resize event listener to resize map and update the smallScreen observable when the viewport size changes
-        google.maps.event.addDomListener(window, "resize", function() {
-          mapView.resizeMap();
-          self.smallScreen($(".container").width() < 630);
-        });
+              // Create an array of destinations and displayedMarkers. These arrays contain to all markers/places.
+              // Destinations array does not change. displayedMarkers array gets updated to contain only the displayed markers.
+              markers.forEach(function(marker) {
+                destinations.push(marker.position);
+                displayedMarkers.push(marker);
+              });
+
+              // Render the initial set of markers
+              mapView.renderMarkers(displayedMarkers);
+
+              var Place = function(data,index) {
+                this.placeName = data.title;
+                this.index = index;
+                this.position = data.position;
+                // Information about the distance and duration of the trip from user-provided origin to each of the destinations. Used on small screens.
+                this.travelInfo = data.travelInfo;
+              };
+
+              // Create an array of place names. Items in this array are shown in the clickable text list on the page.
+              self.createPlaceList = function(markerArray) {
+                markerArray.forEach(function(marker,index){
+                  self.placeList.push(new Place(marker,index));
+                });
+              };
+              self.createPlaceList(displayedMarkers);
+            })
+              // Alert user when data fail to load
+              .fail(function() {
+                window.alert("Something went wrong with loading data. Please check back later.");
+              });
+
+            // Add resize event listener to resize map and update the smallScreen observable when the viewport size changes
+            google.maps.event.addDomListener(window, "resize", function() {
+              mapView.resizeMap();
+              self.smallScreen($(".container").width() < 630);
+            });
+          });
       };
       this.init();
 
@@ -294,6 +301,7 @@ function initMap() {
           if (displayedMarkers.length>0) {
             this.clearAll();
           }
+
           // Find destinations that are within maxDuration of travel time from user provided origin
           distanceMatrixService.getDistanceMatrix({
             origins: [this.origin()],
@@ -320,13 +328,14 @@ function initMap() {
                     if (!self.smallScreen()) {
                       // Create a small infowindow for all markers within specified time
                       var smallInfowindow = new google.maps.InfoWindow();
+                      smallInfowindow.marker = markers[i];
+
                       // Create a small infowindow that contains the distance and duration info
                       contentStr1 = '<div id="vrtitle" class="vr-title">' + markers[i].title +
                       '</div>' + durationText + ' away, ' + distanceText +
                       '<div><input id="vr-btn" type="button" value="View Route" onclick="getDirections(' + i + ')"></input></div>';
 
                       smallInfowindow.setContent(contentStr1);
-                      smallInfowindow.marker = markers[i];
                       // Each small infowindow is given a z index that is the marker's latitude rather than leaving it undefined. This ensures that large infowindow will be displayed in front
                       smallInfowindow.setZIndex(markers[i].position.lat());
                       // Create an array of all small infowindows, which will be rendered together later
@@ -354,7 +363,8 @@ function initMap() {
       }; // End of searchWithinTime
     }; //End of viewmodel
 
-    ko.applyBindings(new ViewModel());
+    vm = new ViewModel();
+    ko.applyBindings(vm);
 
     var mapView = {
       // Resize map when viewport size changes
@@ -423,9 +433,9 @@ function initMap() {
 
   // Display route from origin to destination when user clicks on the "View Route" button in a small infowindow
   // Placing this function here so that html onclick in small infowindow can find it
-  function getDirections(i,smallScreen,clickedMarker) {
+  function getDirections(i) {
     // On large screens
-    if (!smallScreen) {
+    if (!vm.smallScreen()) {
       smallInfowindows.forEach(function(smallinfowindow) {
         smallinfowindow.close();
       });
@@ -436,13 +446,13 @@ function initMap() {
       if (origin === "") {
         window.alert("Please enter an address.");
       } else {
-        destination = clickedMarker().position;
-        title = clickedMarker().title;
+        destination = vm.clickedMarker().position;
+        title = vm.clickedMarker().title;
       }
     }
 
-    origin = document.getElementById("origin").value;
-    travelMode = document.getElementById("travelMode").value;
+    origin = vm.origin();
+    travelMode = vm.travelMode();
 
     ds.route({
       origin: origin,
@@ -482,9 +492,7 @@ function initMap() {
     });
   }
 
-
 // Error handling for when app fails to connect to Google. If Google maps api is available, error cases seem to be handled automatically.
 function mapError() {
     $("#map").append("<div class='errorMsg'><img src='img/IMG_1004.JPG'><p class='largerText'>Oops! Sorry, Ren ate the map!</p><p> Please try again later.</p></div>");
-
 }

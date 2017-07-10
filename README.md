@@ -5,16 +5,18 @@
 This project introduces favorite neighborhood hangouts in Tokyo and some distant places that my dog Ren recommends to other dogs/dog owners.
 
 ### Getting Started
-Access the app on Github (https://yom79.github.io/Neighborhood-Map/).
+You can access the app at https://yom79.github.io/Neighborhood-Map/. Alternatively, you can host the app locally and access it using the browser. To do this,
+1. Open a command prompt and install the http-server package by typing `npm install -g http-server`
+2. Save the neighborhood map folder on your computer.
+3. Go back to the command prompt and navigate to the folder from step 2.
+4. Type `http-server`
+5. Go to http://localhost:8080 using the browser.
 
 ### Changes from Last Submission
-* Markers are now created once, and displayed/hidden as needed. Markers now bounces 3 times, rather than 3 seconds
-* Added some semantic tags in index.html
-* Added resize event listener which updates the observable on screen size automatically
-* Attribution of Foursquare for location and likes information
-* Eliminated use of jQuery/javascript to update the DOM in most places
-* Eliminated unnecessary id names
-* Added/updated error handling
+* Updated this README to include detail instructions on how to use the app.
+* Added <main> to index.html to cover the map div.
+* Separated map styles in a separate file. Styles are now loaded using $.getJSON.
+* Made the view model observables accessible to getDirections to eliminate remaining DOM manipulations
 
 ### More on What You Can Do
 This project provides for slightly different experiences on larger screens and on smaller (<630px) screens.

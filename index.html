@@ -74,11 +74,13 @@
             <option value="DRIVING">drive</option>
             <option value="WALKING">walk</option>
           </select>
-          <input data-bind="click: function() {getDirections(null,$root.smallScreen,$root.clickedMarker)}" type="button" value="View Route" class="text">
+          <input data-bind="click: getDirections" type="button" value="View Route" class="text">
         </p>
       </section>
     </nav>
-    <div id="map" data-bind="css: {open: mapVisible}"></div>
+    <main>
+      <div id="map" data-bind="css: {open: mapVisible}"></div>
+    </main>
   </div>
 
   <script src="js/lib/knockout-3.2.0.js"></script>

@@ -8,7 +8,8 @@
 }
 
 html,
-body {
+body,
+main {
   font-family: "Raleway", sans-serif;
   height: 100%;
   margin: 0;
